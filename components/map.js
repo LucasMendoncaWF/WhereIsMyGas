@@ -4,6 +4,7 @@ import MapView, {PROVIDER_GOOGLE} from 'react-native-maps';
 import { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
 import { getVehicles } from '../services/cars';
+import { getGasStations } from '../services/gasStation';
 
 export class Map extends React.Component  {
 
@@ -13,6 +14,10 @@ export class Map extends React.Component  {
 
   constructor() {
     super();
+    const latlng = {
+      latitude: -23.6412806 + 0.000010, 
+      longitude:-46.7635683 + 0.000010
+    }
     this.state = {
       lat: -23.6412806,
       lon: -46.7635683,
@@ -20,6 +25,19 @@ export class Map extends React.Component  {
       vehicle: '',
       fuel: '',
       vehiclesOptions: [],
+      gasStations: [
+        <Marker coordinate={latlng} key={0}>
+            <View style={styles.popup}>
+              <Text style={styles.popupTitle}>Posto 1</Text>
+              <Text style={styles.popupValue}>Valor: R$XX,XX</Text>
+            </View>
+            <Image
+              source={require('../assets/marker.png')}
+              style={{width: 46, height: 48}}
+              resizeMode="contain"
+            />
+          </Marker>,
+      ],
       marker: {
         latlng: {
           latitude: -23.6412806 + 0.000010, 
@@ -29,6 +47,7 @@ export class Map extends React.Component  {
     }
     this.getLocation();
     this.getVehicles();
+    this.getGasStations();
   };
 
   async getVehicles() {
@@ -38,6 +57,35 @@ export class Map extends React.Component  {
         const name = `${s.marcaVeiculo} ${s.modeloVeiculo}`;
         return <Picker.Item key={s.idVeiculo} value={name} label={name} />
       })
+    });
+  }
+
+  async getGasStations() {
+    const stations = (await getGasStations()).content;
+    const currentGasStations = this.state.gasStations;
+    currentGasStations.push(
+      ...stations.map( (s) => {
+        console.log(s)
+        const latlng = {
+          latitude: parseFloat(s.latitudePosto), 
+          longitude: parseFloat(s.longitudePosto)
+        }
+        return (
+          <Marker coordinate={latlng} key={s.idPosto}>
+            <View style={styles.popup}>
+              <Text style={styles.popupTitle}>{s.nomePosto}</Text>
+              <Text style={styles.popupValue}>Valor: R${s.precoGas}</Text>
+            </View>
+            <Image
+              source={require('../assets/marker.png')}
+              style={{width: 46, height: 48}}
+              resizeMode="contain"
+            />
+          </Marker>
+        )}
+    ));
+    this.setState({  
+        gasStations: currentGasStations
     });
   }
 
@@ -74,6 +122,7 @@ export class Map extends React.Component  {
         }
       });
     });
+    console.log(this.state.gasStations)
   }
 
   render() {
@@ -120,17 +169,7 @@ export class Map extends React.Component  {
           region={{latitude: this.state.lat ,longitude: this.state.lon,latitudeDelta: 0.0922 * 0.1,longitudeDelta: 0.021 * 0.1}}  
           showsUserLocation={true}    
         >
-          <Marker coordinate={this.state.marker.latlng}>
-            <View style={styles.popup}>
-              <Text style={styles.popupTitle}>Posto 1</Text>
-              <Text style={styles.popupValue}>Valor: R$XX,XX</Text>
-            </View>
-            <Image
-              source={require('../assets/marker.png')}
-              style={{width: 46, height: 48}}
-              resizeMode="contain"
-            />
-          </Marker>
+        {this.state.gasStations}
         </MapView>
       </View>
     );

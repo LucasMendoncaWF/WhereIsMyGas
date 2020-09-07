@@ -47,7 +47,7 @@ export class ProfileScreen extends Component {
   async getGasStationById(id) {
     const gasStation = await getGasStationById(id);
     if(!gasStation.error) {
-      return gasStation;
+      return gasStation.nomePosto;
     } else {
       return 'Informação Faltando'
     }
