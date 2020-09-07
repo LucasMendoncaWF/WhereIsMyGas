@@ -1,48 +1,90 @@
 import { View, StyleSheet, ImageBackground, TouchableOpacity, Text, ScrollView, Dimensions } from 'react-native';
-import * as React from 'react';
+import React, { Component } from 'react';
 import TableComponent from './table';
+import { getVehicles, getVehicleById } from '../services/cars';
+import { getTravels } from '../services/travels';
+import { getGasStationById, getGasStations } from '../services/gasStation';
 
-export const ProfileScreen = () => {
-  let veiculoHead = ['Nome', 'Combustível'];
-  let veiculoData = [
-    ['Corsa', 'Gasolina'],
-    ['Gol', 'Alcool',],
-    ['Corola', 'Alcool'],
-  ];
+export class ProfileScreen extends Component {
 
-  let viagemHead = ['Data', 'Veículo', 'Posto'];
-  let viagemData = [
-    ['21/09/20', 'Corsa', 'Posto 1'],
-    ['20/09/20', 'Corsa', 'Posto 1'],
-  ];
+  constructor() {
+    super();
+    this.state = {
+      veiculoData: [],
+      viagemData: []
+    }
+    this.getVehicles();
+    this.getTravels();
+  }
 
-  return (
-    <View style={styles.container}>
-      <ImageBackground style={ styles.imgBackground } 
-                  resizeMode='cover' 
-                  source={require('./../assets/bg.png')}>
-          <ScrollView style={styles.content}>
-            <Text style={styles.name}>João Pedro</Text>
-            <View style={styles.line}></View>
-            <View style={styles.infoContainer}>
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Viagens</Text>
-                <View style={styles.line}></View>
-                <TableComponent tableHead={viagemHead} tableData={viagemData}></TableComponent>
+  async getVehicles() {
+    const vehicles = (await getVehicles()).content;
+    this.setState({  
+      veiculoData: vehicles.map(s => {
+        return [`${s.marcaVeiculo} ${s.modeloVeiculo}`, s.tipoCombustivel]
+      })
+    });
+  }
+
+  async getTravels() {
+    const travels = (await getTravels()).content;
+    let travelsData = [];
+    for(let t = 0; t < travels.length; t++) {
+      travelsData.push([
+        travels[t].duracaoViagem + ' min', 
+        await this.getVehicleById(travels[t].veiculoTable), 
+        await this.getGasStationById(travels[t].postoTable)
+      ]);
+    }
+    this.setState({ viagemData: travelsData });
+  }
+
+  async getVehicleById(id) {
+    const vehicle = await getVehicleById(id);
+    return `${vehicle.marcaVeiculo} ${vehicle.modeloVeiculo}`;
+  }
+
+  async getGasStationById(id) {
+    const gasStation = await getGasStationById(id);
+    if(!gasStation.error) {
+      return gasStation;
+    } else {
+      return 'Informação Faltando'
+    }
+  }
+
+  veiculoHead = ['Nome', 'Combustível'];
+  viagemHead = ['Duração', 'Veículo', 'Posto'];
+
+  render (){
+    return (
+      <View style={styles.container}>
+        <ImageBackground style={ styles.imgBackground } 
+                    resizeMode='cover' 
+                    source={require('./../assets/bg.png')}>
+            <ScrollView style={styles.content}>
+              <Text style={styles.name}>João Pedro</Text>
+              <View style={styles.line}></View>
+              <View style={styles.infoContainer}>
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Viagens</Text>
+                  <View style={styles.line}></View>
+                  <TableComponent tableHead={this.viagemHead} tableData={this.state.viagemData}></TableComponent>
+                </View>
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Veículos</Text>
+                  <View style={styles.line}></View>
+                  <TableComponent tableHead={this.veiculoHead} tableData={this.state.veiculoData}></TableComponent>
+                  <TouchableOpacity style={styles.button}>
+                    <Text style={styles.buttonText}>Cadastrar Veículo</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Veículos</Text>
-                <View style={styles.line}></View>
-                <TableComponent tableHead={veiculoHead} tableData={veiculoData}></TableComponent>
-                <TouchableOpacity style={styles.button}>
-                  <Text style={styles.buttonText}>Cadastrar Veículo</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </ScrollView>
-      </ImageBackground>
-    </View>
-  );
+            </ScrollView>
+        </ImageBackground>
+      </View>
+    );
+  }
 };
 
 const styles = StyleSheet.create({

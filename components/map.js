@@ -3,6 +3,7 @@ import * as React from 'react';
 import MapView, {PROVIDER_GOOGLE} from 'react-native-maps';
 import { Marker } from 'react-native-maps';
 import Geolocation from '@react-native-community/geolocation';
+import { getVehicles } from '../services/cars';
 
 export class Map extends React.Component  {
 
@@ -18,6 +19,7 @@ export class Map extends React.Component  {
       distance: '',
       vehicle: '',
       fuel: '',
+      vehiclesOptions: [],
       marker: {
         latlng: {
           latitude: -23.6412806 + 0.000010, 
@@ -26,7 +28,18 @@ export class Map extends React.Component  {
       }
     }
     this.getLocation();
+    this.getVehicles();
   };
+
+  async getVehicles() {
+    const vehicles = (await getVehicles()).content;
+    this.setState({  
+      vehiclesOptions: vehicles.map( (s) => {
+        const name = `${s.marcaVeiculo} ${s.modeloVeiculo}`;
+        return <Picker.Item key={s.idVeiculo} value={name} label={name} />
+      })
+    });
+  }
 
   distancesValues = [
     '0 a 5km',
@@ -39,19 +52,9 @@ export class Map extends React.Component  {
     return <Picker.Item key={i} value={s} label={s} />
   });
 
-  vehicleValues = [
-    'Corsa',
-    'Gol',
-    'Corola',
-  ]
-
-  vehicles = this.vehicleValues.map( (s, i) => {
-    return <Picker.Item key={i} value={s} label={s} />
-  });
-
   fuelValues = [
     'Gasolina',
-    'Alcool',
+    'Etanol',
   ]
 
   fuels = this.fuelValues.map( (s, i) => {
@@ -94,7 +97,7 @@ export class Map extends React.Component  {
               this.setState({vehicle: value});
             }}>
               <Picker.Item label="Veículos" value="0" />
-              {this.vehicles}
+              {this.state.vehiclesOptions}
             </Picker>
           </View>
           <View style={styles.pickerArea}>
